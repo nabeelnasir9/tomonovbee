@@ -31,7 +31,7 @@ router.post('/signup', async (req, res) => {
         const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
         const otp_expiry = new Date(Date.now() + 300000);
 
-        user = new User({ email, password, otp, otp_expiry, fullName, verified: false });
+        user = new User({ email, password, otp, otp_expiry, fullName });
         await user.save();
 
         // Send OTP to user's email
