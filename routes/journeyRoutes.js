@@ -130,6 +130,42 @@ router.post("/create2", async (req, res) => {
   }
 });
 
+router.post("/upscale", async (req, res) => {
+  try {
+    const body = req.body;
+    const config = {
+      method: "post",
+      url: "https://api.mymidjourney.ai/api/v1/midjourney/button",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: {
+        messageId: `${body.messageId}`,
+        button: `${body.upscale}`,
+      },
+    };
+    const response = await instance(config);
+    const messageId = response.data.messageId;
+    const interval = setInterval(async () => {
+      try {
+        const progressResponse = await checkProgress(messageId, token);
+        if (progressResponse.status === "DONE") {
+          clearInterval(interval);
+          res.json(progressResponse);
+        }
+      } catch (error) {
+        clearInterval(interval);
+        res.status(500).json({ error: "Error in checking progress" });
+      }
+    }, 5000);
+  } catch (error) {
+    console.error("Error in generation request:", error);
+    res.status(500).json({ error: "Error in your response request" });
+  }
+});
+
+// "messageId": "6de653a2-2e66-452b-8e6a-6146f58d4d9c",
 // router.get("/progress", async (req, res) => {
 //   try {
 //     const config = {
