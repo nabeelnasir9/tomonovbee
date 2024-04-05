@@ -6,7 +6,7 @@ const router = express.Router();
 const token = process.env.MIDJOURNEY_TOKEN;
 const BASE_URL = "https://api.mymidjourney.ai/api/v1/midjourney";
 const instance = axios.create({
-  timeout: 0, // Set timeout to 0 for no timeout
+  timeout: 0,
 });
 
 const checkProgress = async (messageId, token) => {
@@ -49,7 +49,6 @@ router.post("/create2", async (req, res) => {
     console.log(messageId);
     console.log(messageId2);
 
-    // Counter to keep track of completed intervals
     let completedIntervals = 0;
 
     const interval1 = setInterval(async () => {
@@ -133,7 +132,7 @@ router.post("/upscale", async (req, res) => {
     const body = req.body;
     const config = {
       method: "post",
-      url: "https://api.mymidjourney.ai/api/v1/midjourney/button",
+      url: `${BASE_URL}/button`,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -163,7 +162,7 @@ router.post("/upscale", async (req, res) => {
   }
 });
 
-router.post("/edit", async (req, res) => {
+router.post("/edit2", async (req, res) => {
   try {
     const body = req.body;
     const config = {
@@ -191,6 +190,68 @@ router.post("/edit", async (req, res) => {
         res.status(500).json({ error: "Error in checking progress" });
       }
     }, 3000);
+  } catch (error) {
+    console.error("Error in Editing request:", error);
+    res.status(500).json({ error: "Error in editing this photo" });
+  }
+});
+async function waitForProgress(messageId, token) {
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const progressResponse = await checkProgress(messageId, token);
+        if (progressResponse.status === "DONE") {
+          clearInterval(interval);
+          resolve(progressResponse);
+        }
+      } catch (error) {
+        clearInterval(interval);
+        reject(error);
+      }
+    }, 3000);
+  });
+}
+
+router.post("/edit", async (req, res) => {
+  try {
+    const body = req.body;
+    const config = {
+      method: "post",
+      url: `${BASE_URL}/imagine`,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: {
+        prompt: `${body.imgUrl} ${body.prompt}`,
+      },
+    };
+    const response = await axios(config);
+    const messageId = response.data.messageId;
+
+    // Wait for the first call to complete before proceeding
+    await waitForProgress(messageId, token);
+
+    const configup = {
+      method: "post",
+      url: `${BASE_URL}/button`,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: {
+        messageId: `${messageId}`,
+        button: `U2`,
+      },
+    };
+    console.log(messageId + "normal");
+    const responseup = await axios(configup);
+    const messageIdup = responseup.data.messageId;
+    console.log(messageIdup);
+
+    // Wait for the second call to complete before sending the response
+    const progress = await waitForProgress(messageIdup, token);
+    res.json(progress);
   } catch (error) {
     console.error("Error in Editing request:", error);
     res.status(500).json({ error: "Error in editing this photo" });
