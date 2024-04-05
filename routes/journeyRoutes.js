@@ -212,6 +212,25 @@ async function waitForProgress(messageId, token) {
   });
 }
 
+async function performFaceswap(progressResponse, token) {
+  await waitForProgress(progressResponse.messageId, token);
+  const faceswapConfig = {
+    method: "post",
+    url: "https://api.mymidjourney.ai/api/v1/midjourney/faceswap",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      source: "https://i.ibb.co/s31f6zV/me23.jpg",
+      target: progressResponse.target,
+    },
+  };
+
+  const response = await axios(faceswapConfig);
+  return response.data;
+}
+
 router.post("/edit", async (req, res) => {
   try {
     const body = req.body;
@@ -229,7 +248,6 @@ router.post("/edit", async (req, res) => {
     const response = await axios(config);
     const messageId = response.data.messageId;
 
-    // Wait for the first call to complete before proceeding
     await waitForProgress(messageId, token);
 
     const configup = {
@@ -249,9 +267,10 @@ router.post("/edit", async (req, res) => {
     const messageIdup = responseup.data.messageId;
     console.log(messageIdup);
 
-    // Wait for the second call to complete before sending the response
-    const progress = await waitForProgress(messageIdup, token);
-    res.json(progress);
+    const progressResponse2 = await waitForProgress(messageIdup, token);
+    /** [FIX: Uncomment and change to faceswapResponse] */
+    //   const faceswapResponse = await performFaceswap(progressResponse2);
+    res.json(progressResponse2);
   } catch (error) {
     console.error("Error in Editing request:", error);
     res.status(500).json({ error: "Error in editing this photo" });
