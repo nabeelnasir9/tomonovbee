@@ -1,6 +1,7 @@
 const express = require("express");
 
 const axios = require("axios");
+const { processOutput } = require("./uploadFile");
 require("dotenv").config();
 const router = express.Router();
 const token = process.env.MIDJOURNEY_TOKEN;
@@ -162,39 +163,39 @@ router.post("/upscale", async (req, res) => {
   }
 });
 
-router.post("/edit2", async (req, res) => {
-  try {
-    const body = req.body;
-    const config = {
-      method: "post",
-      url: `${BASE_URL}/imagine`,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      data: {
-        prompt: `${body.imgUrl} ${body.prompt}`,
-      },
-    };
-    const response = await axios(config);
-    const messageId = response.data.messageId;
-    const interval = setInterval(async () => {
-      try {
-        const progressResponse = await checkProgress(messageId, token);
-        if (progressResponse.status === "DONE") {
-          clearInterval(interval);
-          res.json(progressResponse);
-        }
-      } catch (error) {
-        clearInterval(interval);
-        res.status(500).json({ error: "Error in checking progress" });
-      }
-    }, 3000);
-  } catch (error) {
-    console.error("Error in Editing request:", error);
-    res.status(500).json({ error: "Error in editing this photo" });
-  }
-});
+// router.post("/edit2", async (req, res) => {
+//   try {
+//     const body = req.body;
+//     const config = {
+//       method: "post",
+//       url: `${BASE_URL}/imagine`,
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${token}`,
+//       },
+//       data: {
+//         prompt: `${body.imgUrl} ${body.prompt}`,
+//       },
+//     };
+//     const response = await axios(config);
+//     const messageId = response.data.messageId;
+//     const interval = setInterval(async () => {
+//       try {
+//         const progressResponse = await checkProgress(messageId, token);
+//         if (progressResponse.status === "DONE") {
+//           clearInterval(interval);
+//           res.json(progressResponse);
+//         }
+//       } catch (error) {
+//         clearInterval(interval);
+//         res.status(500).json({ error: "Error in checking progress" });
+//       }
+//     }, 3000);
+//   } catch (error) {
+//     console.error("Error in Editing request:", error);
+//     res.status(500).json({ error: "Error in editing this photo" });
+//   }
+// });
 async function waitForProgress(messageId, token) {
   return new Promise((resolve, reject) => {
     const interval = setInterval(async () => {
@@ -219,10 +220,10 @@ async function performFaceswap(progressResponse, token) {
     url: "https://api.mymidjourney.ai/api/v1/midjourney/faceswap",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjE3NDUsImVtYWlsIjoidG9tbXlub3Z2QGdtYWlsLmNvbSIsInVzZXJuYW1lIjoidG9tbXlub3Z2QGdtYWlsLmNvbSIsImlhdCI6MTcxMjE1NTEyN30.7_y4N9JWwr4ji2a9IV4aNIxHVNApABJ1w5ZUq-Gxeqk`,
     },
     data: {
-      source: "https://i.ibb.co/s31f6zV/me23.jpg",
+      source: "https://i.ibb.co/XW568yY/pexels-engin-akyurt-1642228.jpg",
       target: progressResponse.target,
     },
   };
@@ -269,11 +270,20 @@ router.post("/edit", async (req, res) => {
 
     const progressResponse2 = await waitForProgress(messageIdup, token);
     /** [FIX: Uncomment and change to faceswapResponse] */
-    //   const faceswapResponse = await performFaceswap(progressResponse2);
+    // const faceswapResponse = await performFaceswap(progressResponse2);
     res.json(progressResponse2);
   } catch (error) {
     console.error("Error in Editing request:", error);
     res.status(500).json({ error: "Error in editing this photo" });
+  }
+});
+
+router.get("/image", async (req, res) => {
+  try {
+    const results = await processOutput();
+    res.status(200).json(results);
+  } catch (error) {
+    console.log(error);
   }
 });
 
