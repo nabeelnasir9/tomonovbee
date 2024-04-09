@@ -1,7 +1,7 @@
 const express = require("express");
+const { exec } = require("child_process");
 
 const axios = require("axios");
-const { processOutput } = require("./uploadFile");
 require("dotenv").config();
 const router = express.Router();
 const token = process.env.MIDJOURNEY_TOKEN;
@@ -213,24 +213,24 @@ async function waitForProgress(messageId, token) {
   });
 }
 
-async function performFaceswap(progressResponse, token) {
-  await waitForProgress(progressResponse.messageId, token);
-  const faceswapConfig = {
-    method: "post",
-    url: "https://api.mymidjourney.ai/api/v1/midjourney/faceswap",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjE3NDUsImVtYWlsIjoidG9tbXlub3Z2QGdtYWlsLmNvbSIsInVzZXJuYW1lIjoidG9tbXlub3Z2QGdtYWlsLmNvbSIsImlhdCI6MTcxMjE1NTEyN30.7_y4N9JWwr4ji2a9IV4aNIxHVNApABJ1w5ZUq-Gxeqk`,
-    },
-    data: {
-      source: "https://i.ibb.co/XW568yY/pexels-engin-akyurt-1642228.jpg",
-      target: progressResponse.target,
-    },
-  };
-
-  const response = await axios(faceswapConfig);
-  return response.data;
-}
+// async function performFaceswap(progressResponse, token) {
+//   await waitForProgress(progressResponse.messageId, token);
+//   const faceswapConfig = {
+//     method: "post",
+//     url: "https://api.mymidjourney.ai/api/v1/midjourney/faceswap",
+//     headers: {
+//       "Content-Type": "application/json",
+//       Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjE3NDUsImVtYWlsIjoidG9tbXlub3Z2QGdtYWlsLmNvbSIsInVzZXJuYW1lIjoidG9tbXlub3Z2QGdtYWlsLmNvbSIsImlhdCI6MTcxMjE1NTEyN30.7_y4N9JWwr4ji2a9IV4aNIxHVNApABJ1w5ZUq-Gxeqk`,
+//     },
+//     data: {
+//       source: "https://i.ibb.co/XW568yY/pexels-engin-akyurt-1642228.jpg",
+//       target: progressResponse.target,
+//     },
+//   };
+//
+//   const response = await axios(faceswapConfig);
+//   return response.data;
+// }
 
 router.post("/edit", async (req, res) => {
   try {
@@ -278,12 +278,43 @@ router.post("/edit", async (req, res) => {
   }
 });
 
-router.get("/image", async (req, res) => {
+function extractImgbbUrl(output) {
   try {
-    const results = await processOutput();
-    res.status(200).json(results);
+    // Extract the imgbb URL using regex
+    const regex = /Loaded as API: .+?\n(.+?)\n/;
+    const match = output.match(regex);
+    if (match && match.length > 1) {
+      return match[1];
+    } else {
+      console.error("Failed to extract imgbb URL from Python output:", output);
+      return null;
+    }
   } catch (error) {
-    console.log(error);
+    console.error("Error extracting imgbb URL:", error);
+    return null;
+  }
+}
+router.post("/faceswap", async (req, res) => {
+  try {
+    const body = req.body;
+    const sourceUrl = `"${body.source}"`; // Enclose source URL in double quotes
+    const targetUrl = `"${body.target}"`; // Enclose target URL in double quotes
+    // TODO: Pass image URLs as arguments python check.py targetURl sourceUrl
+    exec(
+      `python check.py ${targetUrl} ${sourceUrl}`,
+      (error, stdout, _stderr) => {
+        if (error) {
+          console.error("Error executing Python script:", error);
+          res.status(500).json({ error: "Internal server error" });
+          return;
+        }
+        const imgbbUrl = extractImgbbUrl(stdout);
+        res.status(200).json({ output: imgbbUrl });
+      },
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
