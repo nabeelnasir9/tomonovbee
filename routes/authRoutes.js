@@ -14,12 +14,11 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: "nasirnabeel36@@gmail.com",
-    pass: "jzvt vuht yspe rzwo",
+    user: "nasirnabeel36@gmail.com",
+    pass: "omjv eavd zmyp ytjv",
   },
 });
 
-// Signup Route
 router.post("/signup", async (req, res) => {
   try {
     const { email, password, fullName } = req.body;
@@ -35,11 +34,11 @@ router.post("/signup", async (req, res) => {
       specialChars: false,
     });
     const otp_expiry = new Date(Date.now() + 300000);
-
-    user = new User({ email, password, otp, otp_expiry, fullName });
+    console.log("otp", otp, "otp_expiry", otp_expiry);
+    const verified = false;
+    user = new User({ email, password, fullName, otp, otp_expiry, verified });
     await user.save();
 
-    // Send OTP to user's email
     const mailOptions = {
       from: process.env.EMAIL,
       to: user.email,
@@ -50,14 +49,14 @@ router.post("/signup", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        return res.status(500).send("Error sending email");
+        return res.status(500).json("Error sending email");
       }
       console.log("Email sent: " + info.response);
-      res.status(200).send("OTP sent to your email");
+      res.status(200).json("OTP sent to your email");
     });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server error");
+    res.status(500).json("Server error");
   }
 });
 
@@ -116,13 +115,16 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     let user = await User.findOne({ email });
 
+    /** [FIX: OTP VERIFY] */
+    // Change below line to
     if (!user || !user.verified) {
-      return res.status(400).send("Invalid Credentials or User not verified");
+      // if (!user) {
+      return res.status(400).json("Invalid Credentials or User not verified");
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).send("Invalid Credentials");
+      return res.status(400).json("Invalid Credentials");
     }
 
     const payload = {

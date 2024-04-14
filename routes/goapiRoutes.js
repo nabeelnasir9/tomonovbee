@@ -2,9 +2,9 @@ const express = require("express");
 const axios = require("axios");
 const router = express.Router();
 const token = process.env.X_API_KEY;
-router.get("/", (_req, res) => {
-  res.send("Hello world");
-});
+// router.get("/", (_req, res) => {
+//   res.send("Hello world");
+// });
 // https://i.pngimg.me/thumb/f/350/comrawpixel4066352.jpg Subject is a young Caucasians Female on island carrying abag on a stick and skipping carelessly.subjectis facing the camera. fullshot.photorealistic details.tarot card. --ar 1:2 --style raw
 
 async function CheckProgress(reqid) {
@@ -100,6 +100,88 @@ router.post("/create2", async (req, res) => {
           message: "At least one task is still processing",
           status1: taskResult1.status,
           status2: taskResult2.status,
+        },
+      ]);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      message: "An error occurred",
+      error: error.message || JSON.stringify(error, null, 2),
+    });
+  }
+});
+
+router.post("/multi", async (req, res) => {
+  try {
+    const body = req.body;
+    console.log(req.body);
+    const makeRequest = async (prompt) => {
+      const config = {
+        headers: {
+          "X-API-KEY": token,
+        },
+        data: {
+          prompt: prompt,
+          aspect_ratio: "1:2",
+          process_mode: "relax",
+          webhook_endpoint: "",
+          webhook_secret: "",
+        },
+        url: "https://api.midjourneyapi.xyz/mj/v2/imagine",
+        method: "post",
+      };
+
+      const answer = await axios(config);
+      const response = answer.data;
+      const taskResult = await CheckProgress(response.task_id);
+      return taskResult;
+    };
+    const prompt = `https://i.ibb.co/3TR9Vxj/images-1.jpg Subject is a young ${body.ethnicity} ${body.gender} on island carrying abag on a stick and skipping carelessly.subjectis facing the camera. fullshot.photorealistic details.tarot card. --ar 1:2 --style raw `;
+    const prompt2 = `https://i.ibb.co/3TR9Vxj/images-1.jpg young ${body.ethnicity} ${body.gender}. magician. photorealistic details. tarot card. --ar 1:2 --style raw`;
+    const prompt3 = `https://i.ibb.co/3TR9Vxj/images-1.jpg young ${body.ethnicity} ${body.gender} sitting on a throne.the man has a feminine quality.the man is wearing white. 45 degree sideview. photorealistic details.tarot card. --ar 1:2 --style raw`;
+
+    const task1Promise = makeRequest(prompt);
+    const task2Promise = makeRequest(prompt2);
+    const task3Promise = makeRequest(prompt3);
+
+    const [taskResult1, taskResult2, taskResult3] = await Promise.all([
+      task1Promise,
+      task2Promise,
+      task3Promise,
+    ]);
+    if (
+      taskResult1.status === "finished" &&
+      taskResult2.status === "finished" &&
+      taskResult3.status === "finished"
+    ) {
+      res.status(200).json([
+        {
+          status: taskResult1.status,
+          task_id: taskResult1.task_id,
+          uri: taskResult1.task_result.image_url,
+          process_time: taskResult1.process_time,
+        },
+        {
+          status: taskResult2.status,
+          task_id: taskResult2.task_id,
+          uri: taskResult2.task_result.image_url,
+          process_time: taskResult2.process_time,
+        },
+        {
+          status: taskResult3.status,
+          task_id: taskResult3.task_id,
+          uri: taskResult3.task_result.image_url,
+          process_time: taskResult3.process_time,
+        },
+      ]);
+    } else {
+      res.status(202).json([
+        {
+          message: "At least one task is still processing",
+          status1: taskResult1.status,
+          status2: taskResult2.status,
+          status3: taskResult3.status,
         },
       ]);
     }
