@@ -1,11 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const router = express.Router();
-const token = process.env.X_API_KEY;
-// router.get("/", (_req, res) => {
-//   res.send("Hello world");
-// });
-// https://i.pngimg.me/thumb/f/350/comrawpixel4066352.jpg Subject is a young Caucasians Female on island carrying abag on a stick and skipping carelessly.subjectis facing the camera. fullshot.photorealistic details.tarot card. --ar 1:2 --style raw
+const token = process.env.X_API_KEY || null;
 
 async function CheckProgress(reqid) {
   return new Promise((resolve, reject) => {
@@ -139,7 +135,7 @@ router.post("/multi", async (req, res) => {
     };
     const prompt = `https://i.ibb.co/3TR9Vxj/images-1.jpg Subject is a young ${body.ethnicity} ${body.gender} on island carrying abag on a stick and skipping carelessly.subjectis facing the camera. fullshot.photorealistic details.tarot card. --ar 1:2 --style raw `;
     const prompt2 = `https://i.ibb.co/3TR9Vxj/images-1.jpg young ${body.ethnicity} ${body.gender}. magician. photorealistic details. tarot card. --ar 1:2 --style raw`;
-    const prompt3 = `https://i.ibb.co/3TR9Vxj/images-1.jpg young ${body.ethnicity} ${body.gender} sitting on a throne.the man has a feminine quality.the man is wearing white. 45 degree sideview. photorealistic details.tarot card. --ar 1:2 --style raw`;
+    const prompt3 = `https://i.ibb.co/3TR9Vxj/images-1.jpg young ${body.ethnicity} ${body.gender} sitting on a throne.the ${body.gender} has a feminine quality.the ${body.gender} is wearing white. 45 degree sideview. photorealistic details.tarot card. --ar 1:2 --style raw`;
 
     const task1Promise = makeRequest(prompt);
     const task2Promise = makeRequest(prompt2);

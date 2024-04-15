@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   otp: { type: String },
   verified: { type: Boolean },
+  selectedImages: { type: Array },
+  orderedImages: { type: Array },
   otp_expiry: { type: Date },
 });
 

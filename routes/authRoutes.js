@@ -154,4 +154,36 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/selected", async (req, res) => {
+  try {
+    const { email, image } = req.body;
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    user.selectedImages.push(image);
+    await user.save();
+    res.status(200).json({ success: "Image added successfully" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/confirmed", async (req, res) => {
+  try {
+    const { email, image } = req.body;
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    user.selectedImages.push(image);
+    await user.save();
+    res.status(200).json({ success: "Image added successfully" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 module.exports = router;
