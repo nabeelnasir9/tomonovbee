@@ -115,10 +115,7 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     let user = await User.findOne({ email });
 
-    /** [FIX: OTP VERIFY] */
-    // Change below line to
     if (!user || !user.verified) {
-      // if (!user) {
       return res.status(400).json("Invalid Credentials or User not verified");
     }
 
@@ -186,4 +183,40 @@ router.post("/confirmed", async (req, res) => {
   }
 });
 
+router.post("/cart", async (req, res) => {
+  try {
+    const { email } = req.body;
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const selectedImages = user.selectedImages;
+    return res
+      .status(200)
+      .json({ message: "User found", images: selectedImages });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/check", async (req, res) => {
+  try {
+    const { email, image } = req.body;
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const urlExists = user.selectedImages.includes(image);
+
+    if (!urlExists) {
+      user.selectedImages.push(image);
+      await user.save();
+    }
+
+    return res.status(200).json({ exists: urlExists });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 module.exports = router;

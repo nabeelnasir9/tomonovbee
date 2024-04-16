@@ -66,15 +66,15 @@ router.post("/create2", async (req, res) => {
     };
 
     const task1Promise = makeRequest();
-    const task2Promise = makeRequest();
+    // const task2Promise = makeRequest();
 
-    const [taskResult1, taskResult2] = await Promise.all([
+    const [taskResult1] = await Promise.all([
       task1Promise,
-      task2Promise,
+      // task2Promise,
     ]);
     if (
-      taskResult1.status === "finished" &&
-      taskResult2.status === "finished"
+      taskResult1.status === "finished"
+      // taskResult2.status === "finished"
     ) {
       res.status(200).json([
         {
@@ -83,12 +83,12 @@ router.post("/create2", async (req, res) => {
           uri: taskResult1.task_result.image_url,
           process_time: taskResult1.process_time,
         },
-        {
-          status: taskResult2.status,
-          task_id: taskResult2.task_id,
-          uri: taskResult2.task_result.image_url,
-          process_time: taskResult2.process_time,
-        },
+        // {
+        //   status: taskResult2.status,
+        //   task_id: taskResult2.task_id,
+        //   uri: taskResult2.task_result.image_url,
+        //   process_time: taskResult2.process_time,
+        // },
       ]);
     } else {
       res.status(202).json([
@@ -138,18 +138,18 @@ router.post("/multi", async (req, res) => {
     const prompt3 = `https://i.ibb.co/3TR9Vxj/images-1.jpg young ${body.ethnicity} ${body.gender} sitting on a throne.the ${body.gender} has a feminine quality.the ${body.gender} is wearing white. 45 degree sideview. photorealistic details.tarot card. --ar 1:2 --style raw`;
 
     const task1Promise = makeRequest(prompt);
-    const task2Promise = makeRequest(prompt2);
-    const task3Promise = makeRequest(prompt3);
+    // const task2Promise = makeRequest(prompt2);
+    // const task3Promise = makeRequest(prompt3);
 
-    const [taskResult1, taskResult2, taskResult3] = await Promise.all([
+    const [taskResult1] = await Promise.all([
       task1Promise,
-      task2Promise,
-      task3Promise,
+      // task2Promise,
+      // task3Promise,
     ]);
     if (
-      taskResult1.status === "finished" &&
-      taskResult2.status === "finished" &&
-      taskResult3.status === "finished"
+      taskResult1.status === "finished"
+      // taskResult2.status === "finished" &&
+      // taskResult3.status === "finished"
     ) {
       res.status(200).json([
         {
@@ -158,26 +158,26 @@ router.post("/multi", async (req, res) => {
           uri: taskResult1.task_result.image_url,
           process_time: taskResult1.process_time,
         },
-        {
-          status: taskResult2.status,
-          task_id: taskResult2.task_id,
-          uri: taskResult2.task_result.image_url,
-          process_time: taskResult2.process_time,
-        },
-        {
-          status: taskResult3.status,
-          task_id: taskResult3.task_id,
-          uri: taskResult3.task_result.image_url,
-          process_time: taskResult3.process_time,
-        },
+        // {
+        //   status: taskResult2.status,
+        //   task_id: taskResult2.task_id,
+        //   uri: taskResult2.task_result.image_url,
+        //   process_time: taskResult2.process_time,
+        // },
+        // {
+        //   status: taskResult3.status,
+        //   task_id: taskResult3.task_id,
+        //   uri: taskResult3.task_result.image_url,
+        //   process_time: taskResult3.process_time,
+        // },
       ]);
     } else {
       res.status(202).json([
         {
           message: "At least one task is still processing",
           status1: taskResult1.status,
-          status2: taskResult2.status,
-          status3: taskResult3.status,
+          // status2: taskResult2.status,
+          // status3: taskResult3.status,
         },
       ]);
     }
@@ -248,6 +248,7 @@ router.post("/edit", async (req, res) => {
 
     const answer = await axios(config);
     const response = answer.data;
+    console.log(response);
     const taskResult = await CheckProgress(response.task_id);
     const id = taskResult.task_id;
     if (taskResult.status === "finished") {
